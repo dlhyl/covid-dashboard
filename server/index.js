@@ -99,12 +99,10 @@ const blockIDs = {
 app.get("/api", async (req, res) => {
   const startdate = typeof req.query.startdate !== "undefined" ? req.query.startdate : "now()::date - '1 week'::interval";
   const enddate = typeof req.query.enddate !== "undefined" ? req.query.enddate : "now()";
-
   const query = `
   SELECT 
-    *, 
-    coalesce(pcr_positive_today+ag_positive_today,pcr_positive_today,ag_positive_today) as pcr_ag_positive
-  FROM daily_general
+    *
+  FROM daily_general_detail
   WHERE date between ${startdate} and ${enddate}
   order by date asc;
   `;
@@ -114,6 +112,56 @@ app.get("/api", async (req, res) => {
   data = [];
   if (result.rows.length > 0) {
     data = result.rows;
+  }
+  return res.json(data);
+});
+
+app.get("/comparison", async (req, res) => {
+  const interval_past = typeof req.query.startdate !== "undefined" ? req.query.startdate : "1 week";
+  const interval_future = typeof req.query.enddate !== "undefined" ? req.query.enddate : "1 week";
+  const startdate = typeof req.query.startdate !== "undefined" ? req.query.startdate : `now()::date - '${interval_past}'::interval`;
+  const enddate = typeof req.query.enddate !== "undefined" ? req.query.enddate : `now()::date + '${interval_future}'::interval`;
+  const query1 = `
+  SELECT 
+    *,
+    to_char(date, 'DD. Mon') new_date
+  FROM daily_general_detailed
+  WHERE date between ${startdate} and ${enddate}
+  order by date asc;
+  `;
+
+  const query2 = `
+  SELECT 
+    *,
+    to_char(date, 'DD. Mon') new_date
+  FROM daily_general_detailed
+  WHERE date between ${startdate} - '1 year'::interval and ${enddate} - '1 year'::interval 
+  order by date asc;
+  `;
+
+  const res1 = await pool.query(query1);
+  const res2 = await pool.query(query2);
+
+  let data = [];
+  for (const row in res1.rows) {
+    let newObj = {};
+    for (let key in row) {
+      if (key == "new_date") newObj["date"] = row[key];
+      else newObj["y2021_" + key] = row[key];
+    }
+    data.push(newObj);
+  }
+
+  for (const row in res2.rows) {
+    var y2020obj = data.find((obj) => {
+      return obj.date === row["new_date"];
+    });
+    let newObj = y2020obj.length === 1 ? y2020obj[0] : {};
+    for (let key in row) {
+      if (key == "new_date") newObj["date"] = row[key];
+      else newObj["y2020_" + key] = row[key];
+    }
+    if (y2020obj.length !== 1) data.push(newObj);
   }
   return res.json(data);
 });
