@@ -102,7 +102,7 @@ app.get("/api", async (req, res) => {
   const query = `
   SELECT 
     *
-  FROM daily_general_detail
+  FROM daily_general_detailed
   WHERE date between ${startdate} and ${enddate}
   order by date asc;
   `;
