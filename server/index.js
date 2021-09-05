@@ -116,7 +116,7 @@ app.get("/api", async (req, res) => {
   return res.json(data);
 });
 
-app.get("/comparison", async (req, res) => {
+app.get("/api/comparison", async (req, res) => {
   const interval_past = typeof req.query.startdate !== "undefined" ? req.query.startdate : "1 week";
   const interval_future = typeof req.query.enddate !== "undefined" ? req.query.enddate : "1 week";
   const startdate = typeof req.query.startdate !== "undefined" ? req.query.startdate : `now()::date - '${interval_past}'::interval`;
