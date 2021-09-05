@@ -116,53 +116,6 @@ app.get("/api", async (req, res) => {
     data = result.rows;
   }
   return res.json(data);
-
-  const queries = [
-    "SELECT * FROM daily_general where date >= now()::date - '1 week'::interval order by date desc;",
-    "SELECT * FROM daily_general where date >= (now()::date - '2 week'::interval) and date < (now()::date - '1 week'::interval) order by date desc;",
-  ];
-
-  const promises = queries.map(async (query) => {
-    const results = await pool.query(query);
-    if (results.rows.length > 0) {
-      const PcrAgAvg = (results.rows.map((res) => res.pcr_positive_today + res.ag_positive_today).reduce((a, b) => a + b) / results.rows.length).toFixed(0);
-      const PcrAvg = (results.rows.map((res) => res.pcr_positive_today).reduce((a, b) => a + b) / results.rows.length).toFixed(0);
-      const AgAvg = (results.rows.map((res) => res.ag_positive_today).reduce((a, b) => a + b) / results.rows.length).toFixed(0);
-      const PcrTestsAvg = (results.rows.map((res) => res.pcr_tests_today).reduce((a, b) => a + b) / results.rows.length).toFixed(0);
-      const AgTestsAvg = (results.rows.map((res) => res.ag_tests_today).reduce((a, b) => a + b) / results.rows.length).toFixed(0);
-      const deathsAvg = (results.rows.map((res) => res.deaths_today).reduce((a, b) => a + b) / results.rows.length).toFixed(0);
-      const dates = results.rows.map((res) => res.date.toLocaleString());
-      const sum14d = await pool.query(
-        "SELECT sum(pcr_positive_today) as pcr,sum(ag_positive_today) as ag FROM daily_general where date > $1::date - '2 week'::interval and date <= $1::date limit 14;",
-        [dates[0]]
-      );
-
-      return {
-        PCR_AG_AVERAGE: PcrAgAvg,
-        PCR_AVERAGE: PcrAvg,
-        AG_AVERAGE: AgAvg,
-        PCR_TESTS_AVERAGE: PcrTestsAvg,
-        AG_TESTS_AVERAGE: AgTestsAvg,
-        DEATHS_AVERAGE: deathsAvg,
-        HOSPITALIZED: results.rows[0].hospitalized,
-        HOSPITALIZED_TODAY: results.rows[0].hospitalized_change,
-        results: results.rows.length,
-        latest_date: results.rows[0].date.toLocaleString(),
-        dates: dates,
-        rawData: {
-          pcrP: results.rows.map((res) => res.pcr_positive_today),
-          agP: results.rows.map((res) => res.ag_positive_today),
-          deaths: results.rows.map((res) => res.deaths_today),
-          hosp: results.rows.map((res) => res.hospitalized),
-        },
-        incidence14d: { pcr: ((sum14d.rows[0].pcr * 100_000) / 5_464_060).toFixed(0), ag: ((sum14d.rows[0].ag * 100_000) / 5_464_060).toFixed(0) },
-      };
-    }
-  });
-
-  const data = await Promise.all(promises);
-
-  res.json(data);
 });
 
 app.listen(PORT, () => {
