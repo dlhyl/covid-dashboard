@@ -15,6 +15,11 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+const pg = require("pg");
+pg.types.setTypeParser(1082, function (stringValue) {
+  return new Date(stringValue).toISOString().split("T")[0]; //1082 for date type
+});
+
 const cheerio = require("cheerio");
 const axios = require("axios");
 
@@ -92,6 +97,26 @@ const blockIDs = {
 };
 
 app.get("/api", async (req, res) => {
+  const startdate = typeof req.query.startdate !== "undefined" ? req.query.startdate : "now()::date - '1 week'::interval";
+  const enddate = typeof req.query.enddate !== "undefined" ? req.query.enddate : "now()";
+
+  const query = `
+  SELECT 
+    *, 
+    coalesce(pcr_positive_today+ag_positive_today,pcr_positive_today,ag_positive_today) as pcr_ag_positive
+  FROM daily_general
+  WHERE date between ${startdate} and ${enddate}
+  order by date asc;
+  `;
+
+  const result = await pool.query(query);
+
+  data = [];
+  if (result.rows.length > 0) {
+    data = result.rows;
+  }
+  return res.json(data);
+
   const queries = [
     "SELECT * FROM daily_general where date >= now()::date - '1 week'::interval order by date desc;",
     "SELECT * FROM daily_general where date >= (now()::date - '2 week'::interval) and date < (now()::date - '1 week'::interval) order by date desc;",

@@ -1,20 +1,25 @@
 .App {
   background: linear-gradient(139deg, rgb(21 20 137) 0%, rgb(9 8 24) 100%);
   text-align: center;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  font-family: Source Sans Pro,Hiragino Sans GB,Arial,sans-serif;
+  font-size: 14px;
+  color: #fff;
+  overflow: auto;
 }
+
 .widget {
   background: rgb(255 255 255 / 18%);
   text-align: left;
 }
 .widget > .textContainer{
-  margin: 5%
+  margin: 5%;
+  margin-bottom: 2%!important;
 }
 .widget-number{
   font-size: calc(10px + 2vmin);
@@ -31,3 +36,41 @@
 .graphContainer{
   margin-bottom: 3%;
 }
+
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1200px !important;
+  }
+}
+
+.recharts-cartesian-grid-horizontal line {
+  stroke-dasharray: 2, 2;
+  stroke: #D0D0DA;
+}
+
+.recharts-cartesian-axis-tick-value tspan {
+  fill: #A1A1B5;
+  letter-spacing: 0.03rem;
+  font-size: 14px;
+}
+
+.recharts-cartesian-axis.recharts-yAxis .recharts-cartesian-axis-tick {
+}
+
+.recharts-tooltip-cursor {
+fill: rgba(204, 204, 204, 0.2);
+}
+
+.recharts-surface {
+  overflow: visible!important;
+}
+
+body, #root {
+  overflow: hidden;
+ }
+
+ .recharts-default-tooltip {
+   background-color: rgb(0 0 0 / 90%) !important;
+   border-radius: 10px;
+   border-width: 0px!important;
+ }
