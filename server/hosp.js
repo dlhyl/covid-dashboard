@@ -245,48 +245,17 @@ const getHospitalizations = async () => {
     else hosp_data[date] = { sus: null, ...hosp_conf_value };
   });
 
-  console.log(hosp_data);
-
   const query = `INSERT INTO hospitalizations (date, sus, conf, upv, jis, oaim) VALUES ${Object.entries(hosp_data)
     .map(function ([key, value], i) {
       return `('${key}', ${value["sus"]}, ${value["conf"]}, ${value["upv"]}, ${value["jis"]}, ${value["oaim"]})`;
     })
-    .join(",")} ON CONFLICT DO NOTHING;`;
+    .join(",")} ON CONFLICT ON CONSTRAINT hosp_date_unique DO NOTHING;`;
   console.log(query);
   const result = await pool.query(query);
   console.log(result);
 };
 
-const getKoronaGovData = async () => {
-  const $ = await fetchHTML("https://korona.gov.sk/koronavirus-na-slovensku-v-cislach/");
-  lastUpdate = getDateFromBlock($, blockIDs.date);
-  dbDate = new Date(lastUpdate).toISOString().split("T")[0];
-  pcrP = getNumberFromComment($, "koronastats-positives ");
-  pcrPT = getNumberFromComment($, "koronastats-positives-delta ");
-  pcrT = getNumberFromComment($, "koronastats-lab-tests ");
-  pcrTT = getNumberFromComment($, "koronastats-lab-tests-delta ");
-  deaths = getNumberFromComment($, "koronastats-deceased ");
-  // deathsT = getNumberFromComment($, "koronastats-deceased-delta ");
-  deathsT = getNumberFromHeader($, blockIDs.deaths);
-  agTT = getNumberFromComment($, "koronastats-ag-tests-delta ");
-  agPT = getNumberFromComment($, "koronastats-ag-positives-delta ");
-  hosp = getNumberFromComment($, "koronastats-hospitalized ");
-  hospT = getNumberFromComment($, "koronastats-hospitalized-delta ");
-  vaccine1 = getNumberFromComment($, "koronastats-slovakia_vaccination_dose1_total ");
-  vaccine1T = getNumberFromComment($, "koronastats-slovakia_vaccination_dose1_delta ");
-  vaccine2 = getNumberFromComment($, "koronastats-slovakia_vaccination_dose2_total ");
-  vaccine2T = getNumberFromComment($, "koronastats-slovakia_vaccination_dose2_delta ");
-
-  const query = `INSERT INTO daily_general (date, pcr_positive, pcr_positive_today, pcr_tests_today, deaths, deaths_today, ag_tests_today, ag_positive_today, 
-    hospitalized, hospitalized_change, vaccinated1stdose, vaccinated1stdose_today, vaccinated2nddose, vaccinated2nddose_today) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT ON CONSTRAINT date_unique DO NOTHING;`;
-  const variables = [dbDate, pcrP, pcrPT, pcrTT, deaths, deathsT, agTT, agPT, hosp, hospT, vaccine1, vaccine1T, vaccine2, vaccine2T];
-  const result = await pool.query(query, variables);
-  console.log(result);
-};
-
-getHospitalizations();
-
-// cron.schedule("*/30 10-12 * * *", () => {
-//   console.log("UPDATED");
-//   getKoronaGovData();
-// });
+cron.schedule("*/30 10-12 * * *", () => {
+  console.log("UPDATED");
+  getHospitalizations();
+});

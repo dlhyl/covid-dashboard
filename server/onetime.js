@@ -1,3 +1,4 @@
+require("dotenv").config();
 const Pool = require("pg").Pool;
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -103,10 +104,18 @@ const getKoronaGovData = async () => {
   vaccine2 = getNumberFromComment($, "koronastats-slovakia_vaccination_dose2_total ");
   vaccine2T = getNumberFromComment($, "koronastats-slovakia_vaccination_dose2_delta ");
 
-  const query = `INSERT INTO daily_general (date, pcr_positive, pcr_positive_today, pcr_tests_today, deaths, deaths_today, ag_tests_today, ag_positive_today, 
-    hospitalized, hospitalized_change, vaccinated1stdose, vaccinated1stdose_today, vaccinated2nddose, vaccinated2nddose_today) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT ON CONSTRAINT date_unique DO NOTHING;`;
-  const variables = [dbDate, pcrP, pcrPT, pcrTT, deaths, deathsT, agTT, agPT, hosp, hospT, vaccine1, vaccine1T, vaccine2, vaccine2T];
-  const result = await pool.query(query, variables);
+  // const query = `INSERT INTO daily_general (date, pcr_positive, pcr_positive_today, pcr_tests_today, deaths, deaths_today, ag_tests_today, ag_positive_today, 
+  //   hospitalized, hospitalized_change, vaccinated1stdose, vaccinated1stdose_today, vaccinated2nddose, vaccinated2nddose_today) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT ON CONSTRAINT date_unique DO NOTHING;`;
+  
+    const query = `INSERT INTO daily_general (date, pcr_positive, pcr_positive_today, pcr_tests_today, deaths, deaths_today, ag_tests_today, ag_positive_today, 
+      hospitalized, hospitalized_change, vaccinated1stdose, vaccinated1stdose_today, vaccinated2nddose, vaccinated2nddose_today) VALUES ('${dbDate}', ${pcrP}, ${pcrPT}, ${pcrTT}, ${deaths}, ${deathsT}, ${agTT}, ${agPT}, ${hosp}, ${hospT}, ${vaccine1}, ${vaccine1T}, ${vaccine2}, ${vaccine2T}) ON CONFLICT ON CONSTRAINT date_unique DO UPDATE SET 
+      date = excluded.date,pcr_positive = excluded.pcr_positive,pcr_positive_today = excluded.pcr_positive_today,pcr_tests_today = excluded.pcr_tests_today,deaths = excluded.deaths,deaths_today = excluded.deaths_today,ag_tests_today = excluded.ag_tests_today,ag_positive_today = excluded.ag_positive_today,hospitalized = excluded.hospitalized,hospitalized_change = excluded.hospitalized_change,vaccinated1stdose = excluded.vaccinated1stdose,vaccinated1stdose_today = excluded.vaccinated1stdose_today,vaccinated2nddose = excluded.vaccinated2nddose,vaccinated2nddose_today = excluded.vaccinated2nddose_today
+      ;`;
+
+
+  console.log(query);
+  // console.log(variables);
+  const result = await pool.query(query);
   console.log(result);
 };
 

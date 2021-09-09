@@ -46,6 +46,12 @@ const formatXAxis = (tickItem) => {
   return new Date(tickItem).toISOString().split("T")[0];
 };
 
+const renderColorfulLegendText = (value, entry) => {
+  const { color, payload } = entry;
+  console.log(entry);
+  return <span style={{ color, fontWeight: payload.strokeWidth * 150 }}>{value}</span>;
+};
+
 function App() {
   const [items, setItems] = useState({});
   const [comparisonData, setComparisonData] = useState({});
@@ -74,6 +80,18 @@ function App() {
         return res.json();
       })
       .then((res) => {
+        const sum = {};
+        res.forEach((obj) => {
+          const keys = Object.keys(obj).filter(function (propertyName) {
+            return ["deaths_today", "vaccinated1stdose_today", "vaccinated2nddose_today"].some((v) => propertyName.includes(v));
+          });
+          keys.forEach((key) => {
+            if (sum.hasOwnProperty(key)) sum[key] += obj[key];
+            else sum[key] = obj[key];
+            obj[key + "_sum"] = sum[key];
+          });
+        });
+
         setComparisonData(res);
       });
   }, []);
@@ -110,23 +128,63 @@ function App() {
       {items && (
         <div style={{ width: "100%", height: "100%", marginTop: "1rem", marginBottom: "1rem" }} className="container">
           <Row style={{ justifyContent: "space-between", marginTop: "1rem", marginBottom: "1rem" }}>
-            <Col span={11}>
-              <StyledCard title={"PCR Ag"} bordered={false} className="widget-card">
+            <Col xs={20} sm={20} md={11} span={11}>
+              <StyledCard title={"Positive Daily"} bordered={false} className="widget-card">
                 <ResponsiveContainer height={350} width="100%">
                   <LineChart data={items} margin={{}}>
                     <CartesianGrid stroke="#ccc" strokeDasharray="5 5" vertical={false} />
                     <XAxis dataKey="date" tick={{ fill: "#fff" }} tickMargin={10} axisLine={false} tickLine={false} tickFormatter={xAxisFormatter} />
                     <YAxis tick={{ fill: "#fff" }} tickMargin={5} axisLine={false} tickLine={false} tickFormatter={numberFormatter} />
                     <Tooltip labelStyle={{ fontSize: 16, color: "#8884d8", fontWeight: "bold" }} labelFormatter={dateFormatter} formatter={numberFormatter} />
-                    <Legend verticalAlign="bottom" align="center" wrapperStyle={{ position: "relative" }} />
-                    <Line isAnimationActive={false} type="monotone" dataKey="pcr_ag_positive" name="PCR + Ag" stroke="#fec89a" strokeWidth={4} />
-                    <Line isAnimationActive={false} type="monotone" dataKey="pcr_positive_today" name="PCR" stroke="#feadfb" strokeWidth={2} />
-                    <Line isAnimationActive={false} type="monotone" dataKey="ag_positive_today" name="Ag" stroke="#e8a598" strokeWidth={2} />
+                    <Legend verticalAlign="bottom" align="center" wrapperStyle={{ position: "relative" }} formatter={renderColorfulLegendText} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="pcr_ag_positive" name="PCR + Ag" stroke="#9d4edd" strokeWidth={5} />
+                    <Line
+                      isAnimationActive={false}
+                      type="monotone"
+                      dataKey="pcr_positive_today"
+                      name="PCR"
+                      stroke="#90e0ef"
+                      strokeWidth={1}
+                      strokeDasharray="5 3"
+                    />
+                    <Line
+                      isAnimationActive={false}
+                      type="monotone"
+                      dataKey="ag_positive_today"
+                      name="Ag"
+                      stroke="#e5383b"
+                      strokeWidth={1}
+                      strokeDasharray="5 3"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </StyledCard>
             </Col>
-            <Col span={11}>
+            <Col xs={20} sm={20} md={11} span={11}>
+              <StyledCard title={"Tests Daily"} bordered={false} className="widget-card">
+                <ResponsiveContainer height={350} width="100%">
+                  <LineChart data={items} margin={{}}>
+                    <CartesianGrid stroke="#ccc" strokeDasharray="5 5" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fill: "#fff" }} tickMargin={10} axisLine={false} tickLine={false} tickFormatter={xAxisFormatter} />
+                    <YAxis tick={{ fill: "#fff" }} tickMargin={5} axisLine={false} tickLine={false} tickFormatter={numberFormatter} />
+                    <Tooltip labelStyle={{ fontSize: 16, color: "#8884d8", fontWeight: "bold" }} labelFormatter={dateFormatter} formatter={numberFormatter} />
+                    <Legend verticalAlign="bottom" align="center" wrapperStyle={{ position: "relative" }} formatter={renderColorfulLegendText} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="pcr_ag_tests" name="PCR+Ag" stroke="#9d4edd" strokeWidth={5} />
+                    <Line
+                      isAnimationActive={false}
+                      type="monotone"
+                      dataKey="pcr_tests_today"
+                      name="PCR"
+                      stroke="#90e0ef"
+                      strokeWidth={1}
+                      strokeDasharray="5 3"
+                    />
+                    <Line isAnimationActive={false} type="monotone" dataKey="ag_tests_today" name="Ag" stroke="#e5383b" strokeWidth={1} strokeDasharray="5 3" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </StyledCard>
+            </Col>
+            {/* <Col span={11}>
               <StyledCard title={"Vaccination"} bordered={false} className="widget-card">
                 <ResponsiveContainer height={350} width="100%">
                   <LineChart data={items} margin={{}}>
@@ -140,7 +198,7 @@ function App() {
                   </LineChart>
                 </ResponsiveContainer>
               </StyledCard>
-            </Col>
+            </Col> */}
           </Row>
           <Row style={{ justifyContent: "space-between", marginTop: "1rem", marginBottom: "1rem" }}>
             <Col span={11}>
@@ -188,6 +246,72 @@ function App() {
 
                     <Line isAnimationActive={false} type="monotone" dataKey="y2020_hosp" name="2020 sus + conf" stroke="#8b5e34" strokeWidth={4} />
                     <Line isAnimationActive={false} type="monotone" dataKey="y2020_hosp_conf" name="2020 conf" stroke="#bc8a5f" strokeWidth={1} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </StyledCard>
+            </Col>
+          </Row>
+          <Row style={{ justifyContent: "space-between", marginTop: "1rem", marginBottom: "1rem" }}>
+            <Col span={11}>
+              <StyledCard title={"Deaths 2020 - 2021 Comparison"} bordered={false} className="widget-card">
+                <ResponsiveContainer height={350} width="100%">
+                  <LineChart data={comparisonData} margin={{}}>
+                    <CartesianGrid stroke="#ccc" strokeDasharray="5 5" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fill: "#fff" }} tickMargin={10} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#fff" }} tickMargin={5} axisLine={false} tickLine={false} tickFormatter={numberFormatter} />
+                    <Tooltip labelStyle={{ fontSize: 16, color: "#8884d8", fontWeight: "bold" }} formatter={numberFormatter} />
+                    <Legend verticalAlign="bottom" align="center" wrapperStyle={{ position: "relative" }} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="y2021_deaths_today_sum" name="2021" stroke="#fec89a" strokeWidth={5} dot={false} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="y2020_deaths_today_sum" name="2020" stroke="#feadfb" strokeWidth={5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </StyledCard>
+            </Col>
+            <Col span={11}>
+              <StyledCard title={"Vaccinations 2020 - 2021 Comparison"} bordered={false} className="widget-card">
+                <ResponsiveContainer height={350} width="100%">
+                  <LineChart data={comparisonData} margin={{}}>
+                    <CartesianGrid stroke="#ccc" strokeDasharray="5 5" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fill: "#fff" }} tickMargin={10} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#fff" }} tickMargin={5} axisLine={false} tickLine={false} tickFormatter={numberFormatter} />
+                    <Tooltip labelStyle={{ fontSize: 16, color: "#8884d8", fontWeight: "bold" }} formatter={numberFormatter} />
+                    <Legend verticalAlign="bottom" align="center" wrapperStyle={{ position: "relative" }} />
+                    <Line
+                      isAnimationActive={false}
+                      type="monotone"
+                      dataKey="y2021_vaccinated1stdose_today_sum"
+                      name="2021 1st dose"
+                      stroke="#9381ff"
+                      strokeWidth={5}
+                      dot={false}
+                    />
+                    <Line
+                      isAnimationActive={false}
+                      type="monotone"
+                      dataKey="y2020_vaccinated1stdose_today_sum"
+                      name="2020 1st dose"
+                      stroke="#8b5e34"
+                      strokeWidth={5}
+                      dot={false}
+                    />
+                    <Line
+                      isAnimationActive={false}
+                      type="monotone"
+                      dataKey="y2021_vaccinated2nddose_today_sum"
+                      name="2021 2nd dose"
+                      stroke="#fec89a"
+                      strokeWidth={5}
+                      dot={false}
+                    />
+                    <Line
+                      isAnimationActive={false}
+                      type="monotone"
+                      dataKey="y2020_vaccinated2nddose_today_sum"
+                      name="2020 2nd dose"
+                      stroke="#feadfb"
+                      strokeWidth={5}
+                      dot={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </StyledCard>
