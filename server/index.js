@@ -1,7 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const cron = require("node-cron");
-
+const headers = require("./headers");
 const PORT = process.env.PORT || 3078;
 
 const app = express();
@@ -440,6 +440,34 @@ const getHospitalizations = async () => {
   const result = await pool.query(query);
   console.log(result);
 };
+
+const getPcrOkresy = (date) => {
+  var date = date || new Date();
+  axios
+    .post("https://wabi-west-europe-api.analysis.windows.net/public/reports/querydata?synchronous=true", headers.PcrPositiveOkresy(date))
+    .then((res) => {
+      var PcrData = [];
+      var customDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() - 1, 0, 0, 0, 0));
+      var customDateString = customDate.toISOString().split("T")[0];
+      res.data.results[0].result.data.dsr.DS[0].PH[0].DM0.forEach((item) => {
+        const positiveCount = item.C.length > 1 ? item.C[1] : 0;
+        PcrData.push([customDateString, item.C[0], positiveCount]);
+      });
+      return PcrData;
+    })
+    .then((data) => {
+      const query = `INSERT INTO pcr_okresy (date, okres, positive) VALUES ${data
+        .map(function (item, i) {
+          return `('${item[0]}', ${item[1]}, ${item[2]})`;
+        })
+        .join(",")} ON CONFLICT ON CONSTRAINT pcr_okresy_date_okres DO NOTHING;`;
+      console.log(query);
+      const result = await pool.query(query);
+      console.log(result);
+    });
+};
+
+getPcrOkresy();
 
 cron.schedule("*/30 10-12 * * *", () => {
   console.log("UPDATED");
